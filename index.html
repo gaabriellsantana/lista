@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Compras</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .item span {
+      flex: 1;
+    }
+    .item input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    .item p {
+      margin: 0;
+    }
+    .total {
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    .valor-input {
+      display: none;
+      width: 70%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .valor-button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 6px 15px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
+      display: inline-block;
+      width: auto;
+    }
+    .valor-button:hover {
+      background-color: #45a049;
+    }
+    .valor {
+      font-weight: bold;
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Lista de Compras</h1>
+    <input type="text" id="produto" placeholder="Nome do produto" required>
+    <button onclick="adicionarProduto()">Adicionar Produto</button>
+
+    <div id="listaProdutos"></div>
+
+    <div class="total">
+      <p>Total: R$ <span id="total">0.00</span></p>
+    </div>
+
+    <button onclick="limparLista()">Criar Nova Lista</button>
+  </div>
+
+  <script>
+    let total = 0;
+    let listaDeCompras = JSON.parse(localStorage.getItem('listaDeCompras')) || [];
+
+    function atualizarStorage() {
+      localStorage.setItem('listaDeCompras', JSON.stringify(listaDeCompras));
+      calcularTotal();
+    }
+
+    function adicionarProduto() {
+      const nomeProduto = document.getElementById('produto').value;
+
+      if (nomeProduto) {
+        const index = listaDeCompras.length;
+        listaDeCompras.push({ nome: nomeProduto, valor: null, comprado: false });
+
+        document.getElementById('produto').value = '';
+
+        exibirLista();
+        atualizarStorage();
+      } else {
+        alert('Por favor, insira um nome para o produto.');
+      }
+    }
+
+    function marcarComprado(index) {
+      listaDeCompras[index].comprado = !listaDeCompras[index].comprado;
+      exibirLista();
+      atualizarStorage();
+    }
+
+    function exibirLista() {
+      const listaProdutosDiv = document.getElementById('listaProdutos');
+      listaProdutosDiv.innerHTML = '';
+
+      listaDeCompras.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('item');
+
+        const texto = document.createElement('span');
+        texto.textContent = item.nome;
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = item.comprado;
+        checkbox.onclick = () => marcarComprado(index);
+
+        const valor = document.createElement('p');
+        valor.textContent = item.valor !== null ? `R$ ${item.valor.toFixed(2)}` : 'Valor não adicionado';
+        valor.classList.add('valor');
+
+        const valorInput = document.createElement('input');
+        valorInput.type = 'number';
+        valorInput.placeholder = 'Digite o valor';
+        valorInput.classList.add('valor-input');
+        valorInput.id = 'valorInput' + index;
+
+        const valorButton = document.createElement('button');
+        valorButton.textContent = 'Adicionar Valor';
+        valorButton.classList.add('valor-button');
+        valorButton.onclick = () => adicionarValor(index, valorInput.value);
+
+        if (item.valor === null) {
+          valorInput.style.display = 'inline-block';
+          valorButton.style.display = 'block';
+        }
+
+        itemDiv.appendChild(texto);
+        itemDiv.appendChild(checkbox);
+        itemDiv.appendChild(valor);
+        itemDiv.appendChild(valorInput);
+        itemDiv.appendChild(valorButton);
+
+        listaProdutosDiv.appendChild(itemDiv);
+      });
+    }
+
+    function adicionarValor(index, valor) {
+      if (valor && !isNaN(valor)) {
+        listaDeCompras[index].valor = parseFloat(valor);
+        exibirLista();
+        atualizarStorage();
+      } else {
+        alert('Por favor, insira um valor válido.');
+      }
+    }
+
+    function calcularTotal() {
+      total = listaDeCompras.reduce((acc, item) => {
+        if (!item.comprado) {
+          return acc + (item.valor || 0);
+        }
+        return acc;
+      }, 0);
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
+
+    function limparLista() {
+      if (confirm('Tem certeza que deseja criar uma nova lista?')) {
+        listaDeCompras = [];
+        localStorage.removeItem('listaDeCompras');
+        exibirLista();
+        calcularTotal();
+      }
+    }
+
+    // Carregar lista de compras quando a página carregar
+    exibirLista();
+    calcularTotal();
+
+  </script>
+
+</body>
+</html>

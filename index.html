@@ -51,6 +51,7 @@
     }
     .item span {
       flex: 1;
+      font-size: 14px; /* Fonte menor para os nomes dos produtos */
     }
     .item input[type="checkbox"] {
       margin-right: 10px;
@@ -65,9 +66,8 @@
       font-size: 18px;
     }
     .valor-input {
-      display: none;
-      width: 70%;
-      padding: 8px;
+      width: 10%; /* Reduzindo bem a largura do campo de valor unitário */
+      padding: 5px;
       margin: 10px 0;
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -99,6 +99,7 @@
   <div class="container">
     <h1>Lista de Compras</h1>
     <input type="text" id="produto" placeholder="Nome do produto" required>
+    <input type="number" id="quantidade" placeholder="Quantidade" required>
     <button onclick="adicionarProduto()">Adicionar Produto</button>
 
     <div id="listaProdutos"></div>
@@ -121,24 +122,40 @@
 
     function adicionarProduto() {
       const nomeProduto = document.getElementById('produto').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
 
-      if (nomeProduto) {
-        const index = listaDeCompras.length;
-        listaDeCompras.push({ nome: nomeProduto, valor: null, comprado: false });
+      if (nomeProduto && quantidade > 0) {
+        listaDeCompras.push({ nome: nomeProduto, quantidade: quantidade, valor: null, comprado: false });
 
         document.getElementById('produto').value = '';
+        document.getElementById('quantidade').value = '';
 
         exibirLista();
         atualizarStorage();
       } else {
-        alert('Por favor, insira um nome para o produto.');
+        alert('Por favor, insira um nome para o produto e uma quantidade válida.');
       }
     }
 
-    function marcarComprado(index) {
-      listaDeCompras[index].comprado = !listaDeCompras[index].comprado;
-      exibirLista();
-      atualizarStorage();
+    function adicionarValor(index) {
+      const valorInput = document.getElementById('valorInput' + index);
+      const valor = parseFloat(valorInput.value);
+      
+      if (valor && !isNaN(valor)) {
+        listaDeCompras[index].valor = valor * listaDeCompras[index].quantidade;
+        valorInput.value = ''; // Limpa o campo de entrada de valor após o envio
+        exibirLista();
+        atualizarStorage();
+      } else {
+        alert('Por favor, insira um valor válido.');
+      }
+    }
+
+    function calcularTotal() {
+      total = listaDeCompras.reduce((acc, item) => {
+        return acc + (item.valor || 0);
+      }, 0);
+      document.getElementById('total').textContent = total.toFixed(2);
     }
 
     function exibirLista() {
@@ -150,7 +167,7 @@
         itemDiv.classList.add('item');
 
         const texto = document.createElement('span');
-        texto.textContent = item.nome;
+        texto.textContent = `${item.nome} (Qtd: ${item.quantidade})`;
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -163,19 +180,14 @@
 
         const valorInput = document.createElement('input');
         valorInput.type = 'number';
-        valorInput.placeholder = 'Digite o valor';
+        valorInput.placeholder = 'Valor unitário';
         valorInput.classList.add('valor-input');
         valorInput.id = 'valorInput' + index;
 
         const valorButton = document.createElement('button');
         valorButton.textContent = 'Adicionar Valor';
         valorButton.classList.add('valor-button');
-        valorButton.onclick = () => adicionarValor(index, valorInput.value);
-
-        if (item.valor === null) {
-          valorInput.style.display = 'inline-block';
-          valorButton.style.display = 'block';
-        }
+        valorButton.onclick = () => adicionarValor(index);
 
         itemDiv.appendChild(texto);
         itemDiv.appendChild(checkbox);
@@ -187,36 +199,20 @@
       });
     }
 
-    function adicionarValor(index, valor) {
-      if (valor && !isNaN(valor)) {
-        listaDeCompras[index].valor = parseFloat(valor);
-        exibirLista();
-        atualizarStorage();
-      } else {
-        alert('Por favor, insira um valor válido.');
-      }
-    }
-
-    function calcularTotal() {
-      total = listaDeCompras.reduce((acc, item) => {
-        return acc + (item.valor || 0);  // Somar todos os valores, sem considerar o estado "comprado"
-      }, 0);
-      document.getElementById('total').textContent = total.toFixed(2);
+    function marcarComprado(index) {
+      listaDeCompras[index].comprado = !listaDeCompras[index].comprado;
+      exibirLista();
+      atualizarStorage();
     }
 
     function limparLista() {
-      if (confirm('Tem certeza que deseja criar uma nova lista?')) {
-        listaDeCompras = [];
-        localStorage.removeItem('listaDeCompras');
-        exibirLista();
-        calcularTotal();
-      }
+      listaDeCompras = [];
+      exibirLista();
+      atualizarStorage();
     }
 
-    // Carregar lista de compras quando a página carregar
     exibirLista();
     calcularTotal();
-
   </script>
 
 </body>

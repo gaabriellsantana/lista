@@ -199,10 +199,7 @@
 
     function calcularTotal() {
       total = listaDeCompras.reduce((acc, item) => {
-        if (!item.comprado) {
-          return acc + (item.valor || 0);
-        }
-        return acc;
+        return acc + (item.valor || 0);  // Somar todos os valores, sem considerar o estado "comprado"
       }, 0);
       document.getElementById('total').textContent = total.toFixed(2);
     }
